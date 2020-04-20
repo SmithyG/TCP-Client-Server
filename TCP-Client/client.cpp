@@ -3,8 +3,8 @@
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 
 
 // Need to link with Ws2_32.lib, Mswsock.lib, and Advapi32.lib
@@ -23,10 +23,9 @@ int __cdecl main(int argc, char **argv)
 	struct addrinfo *result = NULL,
 		*ptr = NULL,
 		hints;
-	const char *sendbuf = "this is a test of more data";
+	const auto sendbuf = "this is a test of more data";
 	char recvbuf[DEFAULT_BUFLEN];
-	int iResult;
-	int recvbuflen = DEFAULT_BUFLEN;
+	const auto recvbuflen = DEFAULT_BUFLEN;
 
 	// Validate the parameters
 	if (argc != 2)
@@ -36,7 +35,7 @@ int __cdecl main(int argc, char **argv)
 	}
 
 	// Initialize Winsock
-	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	auto iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (iResult != 0)
 	{
 		printf("WSAStartup failed with error: %d\n", iResult);
