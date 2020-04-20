@@ -4,7 +4,7 @@
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <stdio.h>
+#include <cstdio>
 
 // Need to link with Ws2_32.lib
 #pragma comment (lib, "Ws2_32.lib")
@@ -15,20 +15,18 @@
 int __cdecl main(void)
 {
 	WSADATA wsaData;
-	int iResult;
 
 	SOCKET ListenSocket = INVALID_SOCKET;
 	SOCKET ClientSocket = INVALID_SOCKET;
 
 	struct addrinfo *result = NULL;
-	struct addrinfo hints;
+	struct addrinfo hints{};
 
-	int iSendResult;
 	char recvbuf[DEFAULT_BUFLEN];
-	int recvbuflen = DEFAULT_BUFLEN;
+	const auto recvbuflen = DEFAULT_BUFLEN;
 
 	// Initialize Winsock
-	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	auto iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (iResult != 0)
 	{
 		printf("WSAStartup failed with error: %d\n", iResult);
@@ -107,7 +105,7 @@ int __cdecl main(void)
 			std::cout << "Data received: " << recvData.c_str() << std::endl;
 
 			// Echo the buffer back to the sender
-			iSendResult = send(ClientSocket, recvbuf, iResult, 0);
+			const auto iSendResult = send(ClientSocket, recvbuf, iResult, 0);
 			if (iSendResult == SOCKET_ERROR)
 			{
 				printf("send failed with error: %d\n", WSAGetLastError());
