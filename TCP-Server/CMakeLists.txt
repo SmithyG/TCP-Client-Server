@@ -4,7 +4,13 @@ project(TCP-Server LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-set(project_sources
-    server.cpp)
+set(project_headers
+	server.h)
 
-add_executable(${PROJECT_NAME} ${project_sources})
+set(project_sources
+	server.cpp)
+
+add_executable(${PROJECT_NAME} ${project_headers} ${project_sources})
+
+target_link_libraries(${PROJECT_NAME}
+	Ws2_32.lib)
