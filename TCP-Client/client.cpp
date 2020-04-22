@@ -6,32 +6,41 @@
 #include <cstdlib>
 #include <cstdio>
 
+#include "client.h"
 
-// Need to link with Ws2_32.lib, Mswsock.lib, and Advapi32.lib
-#pragma comment (lib, "Ws2_32.lib")
-#pragma comment (lib, "Mswsock.lib")
-#pragma comment (lib, "AdvApi32.lib")
 
+#include <iostream>
+#include <stdexcept>
+#include <string>
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "27015"
 
-int __cdecl main(int argc, char **argv)
+int main(int argc, char* argv[])
+{
+	auto client = Client(argc, argv);
+
+	client.Connect();
+	client.Send();
+	client.Receive();
+	client.Shutdown();
+
+	return 0;
+}
+
+Client::Client(int argc, char* argv[])
+{
+	InitiliseSocket(argc, argv);
+}
+
+void Client::InitiliseSocket(int argc, char* argv[])
 {
 	WSADATA wsaData;
-	SOCKET ConnectSocket = INVALID_SOCKET;
-	struct addrinfo *result = NULL,
-		*ptr = NULL,
-		hints;
-	const auto sendbuf = "this is a test of more data";
-	char recvbuf[DEFAULT_BUFLEN];
-	const auto recvbuflen = DEFAULT_BUFLEN;
 
 	// Validate the parameters
 	if (argc != 2)
 	{
-		printf("usage: %s server-name\n", argv[0]);
-		return 1;
+		throw std::logic_error("usage: " + std::string(argv[0]) + "server-name");
 	}
 
 	// Initialize Winsock
@@ -39,7 +48,7 @@ int __cdecl main(int argc, char **argv)
 	if (iResult != 0)
 	{
 		printf("WSAStartup failed with error: %d\n", iResult);
-		return 1;
+		throw std::runtime_error("WSAStartup failed with error: " + std::to_string(iResult));
 	}
 
 	ZeroMemory(&hints, sizeof(hints));
@@ -53,24 +62,25 @@ int __cdecl main(int argc, char **argv)
 	{
 		printf("getaddrinfo failed with error: %d\n", iResult);
 		WSACleanup();
-		return 1;
+		throw std::runtime_error("getaddrinfo failed with error: " + std::to_string(iResult));
 	}
+}
 
+void Client::Connect()
+{
 	// Attempt to connect to an address until one succeeds
 	for (ptr = result; ptr != NULL; ptr = ptr->ai_next)
 	{
 		// Create a SOCKET for connecting to server
-		ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype,
-			ptr->ai_protocol);
+		ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 		if (ConnectSocket == INVALID_SOCKET)
 		{
-			printf("socket failed with error: %ld\n", WSAGetLastError());
 			WSACleanup();
-			return 1;
+			throw std::runtime_error("socket failed with error: " + WSAGetLastError());
 		}
 
 		// Connect to server.
-		iResult = connect(ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
+		auto iResult = connect(ConnectSocket, ptr->ai_addr, static_cast<int>(ptr->ai_addrlen));
 		if (iResult == SOCKET_ERROR)
 		{
 			closesocket(ConnectSocket);
@@ -84,53 +94,63 @@ int __cdecl main(int argc, char **argv)
 
 	if (ConnectSocket == INVALID_SOCKET)
 	{
-		printf("Unable to connect to server!\n");
 		WSACleanup();
-		return 1;
+		throw std::runtime_error("Unable to connect to server!\n");
 	}
+}
+
+void Client::Send() const
+{
+	const auto sendbuf = "this is a test of more data";
 
 	// Send an initial buffer
-	iResult = send(ConnectSocket, sendbuf, (int)strlen(sendbuf), 0);
+	const auto iResult = send(ConnectSocket, sendbuf, static_cast<int>(strlen(sendbuf)), 0);
 	if (iResult == SOCKET_ERROR)
 	{
-		printf("send failed with error: %d\n", WSAGetLastError());
 		closesocket(ConnectSocket);
 		WSACleanup();
-		return 1;
+		throw std::runtime_error("send failed with error: " + WSAGetLastError());
 	}
+	std::cout << "Bytes Sent: " << iResult << "\n";
+}
 
-	printf("Bytes Sent: %ld\n", iResult);
-
-	// shutdown the connection since no more data will be sent
-	/*iResult = shutdown(ConnectSocket, SD_SEND);
-	if (iResult == SOCKET_ERROR) {
-		printf("shutdown failed with error: %d\n", WSAGetLastError());
-		closesocket(ConnectSocket);
-		WSACleanup();
-		return 1;
-	}*/
-
+void Client::Receive() const
+{
+	char recvbuf[DEFAULT_BUFLEN];
+	const auto recvbuflen = DEFAULT_BUFLEN;
 	// Receive until the peer closes the connection
 	do
 	{
-		iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
-		if (iResult > 0)
+		const auto result = recv(ConnectSocket, recvbuf, recvbuflen, 0);
+		if (result > 0)
 		{
-			printf("Bytes received: %d\n", iResult);
+			printf("Bytes received: %d\n", result);
 		}
-		else if (iResult == 0)
+		else if (result == 0)
 		{
 			printf("Connection closed\n");
+			Shutdown();
 		}
 		else
 		{
 			printf("recv failed with error: %d\n", WSAGetLastError());
+			Shutdown();
 		}
-	}while (iResult > 0);
+	} while (result > 0);
+}
+
+void Client::Shutdown() const
+{
+	// shutdown the connection since no more data will be sent
+	const auto iResult = shutdown(ConnectSocket, SD_SEND);
+	if (iResult == SOCKET_ERROR)
+	{
+		closesocket(ConnectSocket);
+		WSACleanup();
+		throw std::runtime_error("shutdown failed with error: " + WSAGetLastError());
+	}
 
 	// cleanup
 	closesocket(ConnectSocket);
 	WSACleanup();
-
-	return 0;
 }
