@@ -21,9 +21,8 @@ int main(int argc, char* argv[])
 	auto client = Client(argc, argv);
 
 	client.Connect();
-	client.Send();
+	client.Send("Suck Ma Dik");
 	client.Receive();
-	client.Shutdown();
 
 	return 0;
 }
@@ -97,14 +96,14 @@ void Client::Connect()
 		WSACleanup();
 		throw std::runtime_error("Unable to connect to server!\n");
 	}
+
+	std::cout << "Connected to server\n";
 }
 
-void Client::Send() const
+void Client::Send(const std::string message) const
 {
-	const auto sendbuf = "this is a test of more data";
-
 	// Send an initial buffer
-	const auto iResult = send(ConnectSocket, sendbuf, static_cast<int>(strlen(sendbuf)), 0);
+	const auto iResult = send(ConnectSocket, message.c_str(), static_cast<int>(strlen(message.c_str())), 0);
 	if (iResult == SOCKET_ERROR)
 	{
 		closesocket(ConnectSocket);
@@ -137,6 +136,8 @@ void Client::Receive() const
 			Shutdown();
 		}
 	} while (result > 0);
+
+	Shutdown();
 }
 
 void Client::Shutdown() const

@@ -1,11 +1,12 @@
 #pragma once
+#include <string>
 
 class Client
 {
 public:
 	Client(int argc, char* argv[]);
 	void Connect();
-	void Send() const;
+	void Send(std::string message) const;
 	void Receive() const;
 	void Shutdown() const;
 

@@ -18,7 +18,6 @@ int main(int argc, char* argv[])
 
 	server.AcceptClient();
 	server.Receive();
-	server.Shutdown();
 }
 
 Server::Server()
@@ -96,6 +95,7 @@ void Server::AcceptClient()
 
 	// No longer need server socket
 	closesocket(listenSocket);
+	std::cout << "Client Connected\n";
 }
 
 void Server::Receive() const
@@ -104,7 +104,7 @@ void Server::Receive() const
 	const auto recvbuflen = DEFAULT_BUFLEN;
 
 	// Receive until the peer shuts down the connection
-	int result = -1;
+	int result = 0;
 	do
 	{
 		result = recv(clientSocket, recvbuf, recvbuflen, 0);
