@@ -21,8 +21,14 @@ int main(int argc, char* argv[])
 	auto client = Client(argc, argv);
 
 	client.Connect();
-	client.Send("Suck Ma Dik");
-	client.Receive();
+	client.StartReceiveThread();
+
+	while(true)
+	{
+		std::string msg;
+		std::getline(std::cin, msg);
+		client.Send(msg);
+	}
 
 	return 0;
 }
@@ -154,4 +160,9 @@ void Client::Shutdown() const
 	// cleanup
 	closesocket(ConnectSocket);
 	WSACleanup();
+}
+
+void Client::StartReceiveThread()
+{
+	receiveThread = std::thread(&Client::Receive, this);
 }
