@@ -1,20 +1,16 @@
 #define WIN32_LEAN_AND_MEAN
 
+#include <cstdio>
+#include <iostream>
+#include <stdexcept>
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <cstdlib>
-#include <cstdio>
 
 #include "client.h"
 
-
-#include <iostream>
-#include <stdexcept>
-#include <string>
-
-#define DEFAULT_BUFLEN 512
-#define DEFAULT_PORT "27015"
+constexpr auto DEFAULT_BUFLEN = 512;
+constexpr auto DEFAULT_PORT = "27015";
 
 int main(int argc, char* argv[])
 {
@@ -38,7 +34,7 @@ Client::Client(int argc, char* argv[])
 	InitiliseSocket(argc, argv);
 }
 
-void Client::InitiliseSocket(int argc, char* argv[])
+void Client::InitiliseSocket(const int argc, char* argv[])
 {
 	WSADATA wsaData;
 
@@ -52,7 +48,6 @@ void Client::InitiliseSocket(int argc, char* argv[])
 	auto iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (iResult != 0)
 	{
-		printf("WSAStartup failed with error: %d\n", iResult);
 		throw std::runtime_error("WSAStartup failed with error: " + std::to_string(iResult));
 	}
 
@@ -65,7 +60,6 @@ void Client::InitiliseSocket(int argc, char* argv[])
 	iResult = getaddrinfo(argv[1], DEFAULT_PORT, &hints, &result);
 	if (iResult != 0)
 	{
-		printf("getaddrinfo failed with error: %d\n", iResult);
 		WSACleanup();
 		throw std::runtime_error("getaddrinfo failed with error: " + std::to_string(iResult));
 	}
@@ -81,11 +75,11 @@ void Client::Connect()
 		if (ConnectSocket == INVALID_SOCKET)
 		{
 			WSACleanup();
-			throw std::runtime_error("socket failed with error: " + WSAGetLastError());
+			throw std::runtime_error("socket failed with error: " + std::to_string(WSAGetLastError()));
 		}
 
 		// Connect to server.
-		auto iResult = connect(ConnectSocket, ptr->ai_addr, static_cast<int>(ptr->ai_addrlen));
+		const auto iResult = connect(ConnectSocket, ptr->ai_addr, static_cast<int>(ptr->ai_addrlen));
 		if (iResult == SOCKET_ERROR)
 		{
 			closesocket(ConnectSocket);
@@ -114,7 +108,7 @@ void Client::Send(const std::string message) const
 	{
 		closesocket(ConnectSocket);
 		WSACleanup();
-		throw std::runtime_error("send failed with error: " + WSAGetLastError());
+		throw std::runtime_error("send failed with error: " + std::to_string(WSAGetLastError()));
 	}
 	std::cout << "Bytes Sent: " << iResult << "\n";
 }
@@ -129,19 +123,19 @@ void Client::Receive() const
 		const auto result = recv(ConnectSocket, recvbuf, recvbuflen, 0);
 		if (result > 0)
 		{
-			printf("Bytes received: %d\n", result);
+			std::cout << "Bytes received: " << result << "\n";
 		}
 		else if (result == 0)
 		{
-			printf("Connection closed\n");
+			std::cout << "Connection closed\n";
 			Shutdown();
 		}
 		else
 		{
-			printf("recv failed with error: %d\n", WSAGetLastError());
+			std::cout << "recv failed with error: " << std::to_string(WSAGetLastError()) << "\n";
 			Shutdown();
 		}
-	} while (result > 0);
+	} while (result > nullptr);
 
 	Shutdown();
 }
@@ -154,7 +148,7 @@ void Client::Shutdown() const
 	{
 		closesocket(ConnectSocket);
 		WSACleanup();
-		throw std::runtime_error("shutdown failed with error: " + WSAGetLastError());
+		throw std::runtime_error("shutdown failed with error: " + std::to_string(WSAGetLastError()));
 	}
 
 	// cleanup

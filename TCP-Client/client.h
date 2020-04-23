@@ -14,9 +14,11 @@ public:
 private:
 	void InitiliseSocket(int argc, char* argv[]);
 	void Receive() const;
+
 	SOCKET ConnectSocket = INVALID_SOCKET;
-	struct addrinfo *result = NULL,
-		*ptr = NULL,
+	struct addrinfo *result =
+		nullptr,
+		*ptr = nullptr,
 		hints{};
 
 	std::thread receiveThread;
